@@ -8,18 +8,22 @@ class App extends React.Component {
     transactions: {
       sell: [],
       buy: [],
-      json:{},
+      json: {},
       bitcoins: 0
     }
   };
   componentDidMount() {
     const result = JSON.parse(localStorage.getItem("stateJSON") || "{}");
     const {
-      state: { rate = 0, transactions: { buy = [], sell = [] } = {}, bitcoins = 0} = {}
+      state: {
+        rate = 0,
+        transactions: { buy = [], sell = [] } = {},
+        bitcoins = 0
+      } = {}
     } = result;
     fetch("https://api.zebpay.com/api/v1/ticker?currencyCode=INR")
-    .then(r=>r.json())
-    .then(json=>this.setState({json}));
+      .then(r => r.json())
+      .then(json => this.setState({ json }));
     this.setState({
       rate,
       transactions: { buy, sell },
@@ -74,16 +78,14 @@ class App extends React.Component {
       JSON.stringify({ state: { rate, transactions, bitcoins } })
     );
   };
-  
+
   render() {
-    let { rate, transactions = {}, json={}, bitcoins } = this.state;
+    let { rate, transactions = {}, json = {}, bitcoins } = this.state;
     const {
       onChangeHandlerDeposit,
       onChangeHandlerSell,
-      onChangeHandlerRate,
       onChangeHandlerClear,
       onChangeHandlerSave,
-      onChangeTransactions,
       onChangeHandlerBitcoins
     } = this;
     const { sell = [], buy = [] } = transactions;
@@ -93,7 +95,7 @@ class App extends React.Component {
     return (
       <div>
         <div>
-          <label htmlFor="deposit">Buy: </label>
+          <label htmlFor="deposit">Buys: </label>
           <Input
             id="deposit"
             onChange={onChangeHandlerDeposit}
@@ -101,16 +103,16 @@ class App extends React.Component {
           />
         </div>
         <div>
-          <label htmlFor="sell">Sell: </label>
+          <label htmlFor="sell">Sells: </label>
           <Input id="sell" onChange={onChangeHandlerSell} defaultValue={0} />
         </div>
         <div>
-          <label htmlFor="rate">Current Sell Rate: </label>
-          <Input id="rate" onChange={onChangeHandlerRate} defaultValue={0} />
-        </div>
-        <div>
           <label htmlFor="bitcoins">Current Bitcoins: </label>
-          <Input id="bitcoins" onChange={onChangeHandlerBitcoins} defaultValue={0} />
+          <Input
+            id="bitcoins"
+            onChange={onChangeHandlerBitcoins}
+            defaultValue={0}
+          />
         </div>
         <div>
           <button onClick={onChangeHandlerClear}>Clear </button>
@@ -119,16 +121,16 @@ class App extends React.Component {
         <h2>Current Sell Rate: {json.sell}</h2>
         <h2>Current Buy Rate: {json.buy}</h2>
         <h2>Net Sell: {bitcoins * json.sell}</h2>
-        <h2>Net Profit: {(bitcoins*json.sell) - total}</h2>
+        <h2>Net Profit: {bitcoins * json.sell - total}</h2>
         <h2>Total Bitcoins: {bitcoins}</h2>
-        
+
         <button onClick={onChangeHandlerSave}>Store Results </button>
 
         <div>
-          Buy Transaction:{" "}
-          {transactions.buy &&
-            transactions.buy.map((e, k) => <div key={k}>{e}</div>)}
-          Sell Transaction:{" "}
+          {transactions.buy && <h2>Buy Transaction:</h2>}
+
+          {transactions.buy.map((e, k) => <div key={k}>{e}</div>)}
+          {transactions.sell && <h2>Sell Transaction:</h2>}
           {transactions.sell &&
             transactions.sell.map((e, k) => <div key={k}>{e}</div>)}
         </div>
@@ -138,4 +140,3 @@ class App extends React.Component {
 }
 
 render(<App />, document.getElementById("root"));
-
