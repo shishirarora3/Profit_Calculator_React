@@ -2,6 +2,7 @@
   "name": "r1o68oy2y4",
   "description": "Profit Calulator",
   "version": "0.0.41",
+  "homepage": "https://shishirarora3.github.io/Profit_Calculator_React",
   "dependencies": {
     "react-dom": "16.0.0",
     "react": "16.0.0"
