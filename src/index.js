@@ -2,6 +2,12 @@ import React from "react";
 import { render } from "react-dom";
 import Input from "./Input";
 
+const getNetBuy = (buy = [], sell = []) =>
+  buy.reduce((a, b) => a + b, 0) - sell.reduce((a, b) => a + b, 0);
+const getNetProfit = (bitcoins, json, total) => {
+  return bitcoins * json.sell - total;
+};
+
 class App extends React.Component {
   state = {
     rate: 0,
@@ -9,7 +15,9 @@ class App extends React.Component {
       sell: [],
       buy: [],
       json: {},
-      bitcoins: 0
+      bitcoins: 0,
+      profitChange: 0,
+      total: 0
     }
   };
   componentDidMount() {
@@ -27,7 +35,8 @@ class App extends React.Component {
     this.setState({
       rate,
       transactions: { buy, sell },
-      bitcoins
+      bitcoins,
+      total: getNetBuy(buy, sell)
     });
   }
 
@@ -35,34 +44,57 @@ class App extends React.Component {
     const {
       rate: previousRate,
       transactions: { buy: previousBuy, sell: previousSell } = {},
-      bitcoins: previousBitcoins
+      bitcoins: previousBitcoins,
+      json = {},
+      profitChange
     } = this.state;
     //console.log('previousBuy', previousBuy);
     let rate = previousRate;
     let buy = previousBuy || [];
     let bitcoins = previousBitcoins || 0;
     let sell = previousSell || [];
+    let value = +newValue;
+    let netProfitChange = 0;
 
     switch (operation) {
       case "ADD":
-        buy = previousBuy.concat(+newValue);
+        buy = previousBuy.concat(value);
+        bitcoins = previousBitcoins + value / json.buy;
+        netProfitChange =
+          (bitcoins - previousBitcoins) *
+            getNetBuy(buy, sell) /
+            previousBitcoins -
+          value;
         break;
       case "SUBTRACT":
-        sell = previousSell.concat(+newValue);
+        sell = previousSell.concat(value);
+        bitcoins = previousBitcoins - value / json.sell;
+        netProfitChange =
+          (bitcoins - previousBitcoins) *
+            getNetBuy(buy, sell) /
+            previousBitcoins +
+          value;
         break;
       case "RATE":
-        rate = +newValue;
+        rate = value;
         break;
       case "BITCOINS":
-        bitcoins = +newValue;
+        bitcoins = value;
         break;
       case "CLEAR":
         buy = [];
         sell = [];
         rate = 0;
     }
+    const total = getNetBuy(buy, sell);
 
-    this.setState({ rate, transactions: { buy, sell }, bitcoins });
+    this.setState({
+      rate,
+      transactions: { buy, sell },
+      bitcoins,
+      total,
+      profitChange: netProfitChange
+    });
   };
 
   onChangeHandlerDeposit = this.onChangeHandler("ADD");
@@ -80,7 +112,14 @@ class App extends React.Component {
   };
 
   render() {
-    let { rate, transactions = {}, json = {}, bitcoins } = this.state;
+    let {
+      rate,
+      transactions = {},
+      json = {},
+      bitcoins,
+      profitChange,
+      total
+    } = this.state;
     const {
       onChangeHandlerDeposit,
       onChangeHandlerSell,
@@ -89,8 +128,8 @@ class App extends React.Component {
       onChangeHandlerBitcoins
     } = this;
     const { sell = [], buy = [] } = transactions;
-    const total =
-      buy.reduce((a, b) => a + b, 0) - sell.reduce((a, b) => a + b, 0);
+    const netSell = bitcoins * json.sell;
+    const netProfit = getNetProfit(bitcoins, json, total);
 
     return (
       <div>
@@ -120,19 +159,18 @@ class App extends React.Component {
         <h2>Net Buy: {total}</h2>
         <h2>Current Sell Rate: {json.sell}</h2>
         <h2>Current Buy Rate: {json.buy}</h2>
-        <h2>Net Sell: {bitcoins * json.sell}</h2>
-        <h2>Net Profit: {bitcoins * json.sell - total}</h2>
+        <h2>Net Sell: {netSell}</h2>
+        <h2>Net Profit: {netProfit}</h2>
         <h2>Total Bitcoins: {bitcoins}</h2>
-
+        <h2>Profit Change: {profitChange}</h2>
         <button onClick={onChangeHandlerSave}>Store Results </button>
 
         <div>
-          {transactions.buy && <h2>Buy Transaction:</h2>}
+          {buy && <h2>Buy Transaction:</h2>}
 
-          {transactions.buy.map((e, k) => <div key={k}>{e}</div>)}
-          {transactions.sell && <h2>Sell Transaction:</h2>}
-          {transactions.sell &&
-            transactions.sell.map((e, k) => <div key={k}>{e}</div>)}
+          {buy.map((e, k) => <div key={k}>{e}</div>)}
+          {sell && <h2>Sell Transaction:</h2>}
+          {sell && sell.map((e, k) => <div key={k}>{e}</div>)}
         </div>
       </div>
     );
