@@ -5,7 +5,9 @@ node_js:
   
 install:
   - npm install
-script:
-  - npm test
 deploy:
-  - npm deploy
+  provider: pages
+  skip_cleanup: true
+  github_token: 82322681a6a7a6a4752e34e100f6ff8856fd6fe6
+  on:
+    branch: master
