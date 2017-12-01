@@ -7,31 +7,38 @@ class App extends React.Component {
     rate: 0,
     transactions: {
       sell: [],
-      buy: []
+      buy: [],
+      json:{},
+      bitcoins: 0
     }
   };
   componentDidMount() {
     const result = JSON.parse(localStorage.getItem("stateJSON") || "{}");
     const {
-      state: { rate = 0, transactions: { buy = [], sell = [] } = {} } = {}
+      state: { rate = 0, transactions: { buy = [], sell = [] } = {}, bitcoins = 0} = {}
     } = result;
-
+    fetch("https://api.zebpay.com/api/v1/ticker?currencyCode=INR")
+    .then(r=>r.json())
+    .then(json=>this.setState({json}));
     this.setState({
       rate,
-      transactions: { buy, sell }
+      transactions: { buy, sell },
+      bitcoins
     });
   }
 
   onChangeHandler = operation => newValue => {
     const {
       rate: previousRate,
-      transactions: { buy: previousBuy, sell: previousSell } = {}
+      transactions: { buy: previousBuy, sell: previousSell } = {},
+      bitcoins: previousBitcoins
     } = this.state;
     //console.log('previousBuy', previousBuy);
     let rate = previousRate;
     let buy = previousBuy || [];
-
+    let bitcoins = previousBitcoins || 0;
     let sell = previousSell || [];
+
     switch (operation) {
       case "ADD":
         buy = previousBuy.concat(+newValue);
@@ -42,13 +49,16 @@ class App extends React.Component {
       case "RATE":
         rate = +newValue;
         break;
+      case "BITCOINS":
+        bitcoins = +newValue;
+        break;
       case "CLEAR":
         buy = [];
         sell = [];
         rate = 0;
     }
 
-    this.setState({ rate, transactions: { buy, sell } });
+    this.setState({ rate, transactions: { buy, sell }, bitcoins });
   };
 
   onChangeHandlerDeposit = this.onChangeHandler("ADD");
@@ -56,23 +66,25 @@ class App extends React.Component {
   onChangeHandlerRate = this.onChangeHandler("RATE");
   onChangeHandlerClear = this.onChangeHandler("CLEAR");
   onChangeTransactions = this.onChangeHandler("TRANSACTIONS");
+  onChangeHandlerBitcoins = this.onChangeHandler("BITCOINS");
   onChangeHandlerSave = () => {
-    const { state: { rate, transactions } } = this;
+    const { state: { rate, transactions, bitcoins } } = this;
     localStorage.setItem(
       "stateJSON",
-      JSON.stringify({ state: { rate, transactions } })
+      JSON.stringify({ state: { rate, transactions, bitcoins } })
     );
   };
-
+  
   render() {
-    let { rate, transactions = {} } = this.state;
+    let { rate, transactions = {}, json={}, bitcoins } = this.state;
     const {
       onChangeHandlerDeposit,
       onChangeHandlerSell,
       onChangeHandlerRate,
       onChangeHandlerClear,
       onChangeHandlerSave,
-      onChangeTransactions
+      onChangeTransactions,
+      onChangeHandlerBitcoins
     } = this;
     const { sell = [], buy = [] } = transactions;
     const total =
@@ -97,12 +109,19 @@ class App extends React.Component {
           <Input id="rate" onChange={onChangeHandlerRate} defaultValue={0} />
         </div>
         <div>
+          <label htmlFor="bitcoins">Current Bitcoins: </label>
+          <Input id="bitcoins" onChange={onChangeHandlerBitcoins} defaultValue={0} />
+        </div>
+        <div>
           <button onClick={onChangeHandlerClear}>Clear </button>
         </div>
         <h2>Net Buy: {total}</h2>
-        <h2>Current Sell Rate: {rate}</h2>
-        <h2>Net Profit: {rate - total}</h2>
-
+        <h2>Current Sell Rate: {json.sell}</h2>
+        <h2>Current Buy Rate: {json.buy}</h2>
+        <h2>Net Sell: {bitcoins * json.sell}</h2>
+        <h2>Net Profit: {(bitcoins*json.sell) - total}</h2>
+        <h2>Total Bitcoins: {bitcoins}</h2>
+        
         <button onClick={onChangeHandlerSave}>Store Results </button>
 
         <div>
@@ -119,3 +138,4 @@ class App extends React.Component {
 }
 
 render(<App />, document.getElementById("root"));
+
