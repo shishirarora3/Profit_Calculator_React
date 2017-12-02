@@ -46,7 +46,7 @@ class App extends React.Component {
       transactions: { buy: previousBuy, sell: previousSell } = {},
       bitcoins: previousBitcoins,
       json = {},
-      profitChange
+      total: previousTotal
     } = this.state;
     //console.log('previousBuy', previousBuy);
     let rate = previousRate;
@@ -54,26 +54,17 @@ class App extends React.Component {
     let bitcoins = previousBitcoins || 0;
     let sell = previousSell || [];
     let value = +newValue;
-    let netProfitChange = 0;
+    let prevoiusNetProfit = getNetProfit(bitcoins, json, previousTotal);
 
     switch (operation) {
       case "ADD":
         buy = previousBuy.concat(value);
         bitcoins = previousBitcoins + value / json.buy;
-        netProfitChange =
-          (bitcoins - previousBitcoins) *
-            getNetBuy(buy, sell) /
-            previousBitcoins -
-          value;
+
         break;
       case "SUBTRACT":
         sell = previousSell.concat(value);
         bitcoins = previousBitcoins - value / json.sell;
-        netProfitChange =
-          (bitcoins - previousBitcoins) *
-            getNetBuy(buy, sell) /
-            previousBitcoins +
-          value;
         break;
       case "RATE":
         rate = value;
@@ -88,12 +79,15 @@ class App extends React.Component {
     }
     const total = getNetBuy(buy, sell);
 
+    const profitChange =
+      prevoiusNetProfit - getNetProfit(bitcoins, json, total);
+    console.log(prevoiusNetProfit);
     this.setState({
       rate,
       transactions: { buy, sell },
       bitcoins,
       total,
-      profitChange: netProfitChange
+      profitChange
     });
   };
 
@@ -162,7 +156,7 @@ class App extends React.Component {
         <h2>Net Sell: {netSell}</h2>
         <h2>Net Profit: {netProfit}</h2>
         <h2>Total Bitcoins: {bitcoins}</h2>
-        <h2>Profit Change: {profitChange}</h2>
+        <h2>Profit per bitcoin change: {profitChange}</h2>
         <button onClick={onChangeHandlerSave}>Store Results </button>
 
         <div>
